@@ -17,15 +17,21 @@ const dbFromArgs = function (args) {
 
 
 class MongoModels {
+
     constructor(data) {
 
-        const result = this.constructor.validate(data);
+        if (!this.constructor.validateOnWrite) {
+            const result = this.constructor.validate(data);
 
-        if (result.error) {
-            throw result.error;
+            if (result.error) {
+                throw result.error;
+            }
+
+            Object.assign(this, result.value);
         }
-
-        Object.assign(this, result.value);
+        else {
+            Object.assign(this, data);
+        }
     }
 
 
@@ -280,6 +286,14 @@ class MongoModels {
 
 
     static async insertOne(...args) {
+
+        if (this.validateOnWrite) {
+
+            const validation = this.validate(...args);
+            if (validation.error || validation.warning) {
+                throw new Error('validation failed');
+            }
+        }
 
         const db = dbFromArgs(args);
         const collection = db.collection(this.collectionName);

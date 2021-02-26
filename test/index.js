@@ -172,6 +172,30 @@ lab.experiment('Instance construction', () => {
 
         lab.expect(hello).to.be.an.instanceof(DummyModel);
     });
+
+    lab.test('it does not validate when creating an instance using validateOnWrite', () => {
+
+        class DummyModel extends MongoModels {}
+
+        DummyModel.validateOnWrite = true;
+        DummyModel.schema = Joi.object().keys({
+            name: Joi.string().required()
+        });
+
+        const blamo = function () {
+
+            return new DummyModel({});
+        };
+
+        lab.expect(blamo).to.not.throw();
+
+        const hello = new DummyModel({
+            name: 'World'
+        });
+
+        lab.expect(hello).to.be.an.instanceof(DummyModel);
+    });
+
 });
 
 
@@ -579,6 +603,7 @@ lab.experiment('Proxy methods', () => {
 
     lab.afterEach(async () => {
 
+        DummyModel.validateOnWrite = false;
         await DummyModel.deleteMany({});
     });
 
@@ -594,6 +619,35 @@ lab.experiment('Proxy methods', () => {
         lab.expect(results.length).to.equal(1);
     });
 
+    lab.test('it inserts one document and returns the result - if validation passes', async () => {
+
+        DummyModel.validateOnWrite = true;
+
+        // const blamo = async function () {
+
+        //     return await DummyModel.insertOne({});
+        // };
+        // await lab.expect(blamo).to.throw();
+
+
+        let exception = false;
+        try {
+            await DummyModel.insertOne({});
+        }
+        catch (err) {
+            exception = err;
+        }
+        lab.expect(exception).to.be.an.object();
+
+
+        const document = {
+            name: 'Horse'
+        };
+        const results = await DummyModel.insertOne(document);
+
+        lab.expect(results).to.be.an.array();
+        lab.expect(results.length).to.equal(1);
+    });
 
     lab.test('it inserts many documents and returns the results', async () => {
 
