@@ -106,95 +106,49 @@ lab.experiment('Connections', () => {
 
 lab.experiment('Instance construction', () => {
 
-    lab.test('it constructs an instance using the schema', () => {
+    // lab.test('it constructs an instance using the schema', () => {
 
-        class DummyModel extends MongoModels {}
+    //     class DummyModel extends MongoModels {}
 
-        DummyModel.schema = Joi.object().keys({
-            name: Joi.string().required(),
-            stuff: Joi.object().keys({
-                foo: Joi.string().default('foozball'),
-                bar: Joi.string().default('barzball'),
-                baz: Joi.string().default('bazzball')
-            }).default(() => {
+    //     DummyModel.schema = Joi.object().keys({
+    //         name: Joi.string().required(),
+    //         stuff: Joi.object().keys({
+    //             foo: Joi.string().default('foozball'),
+    //             bar: Joi.string().default('barzball'),
+    //             baz: Joi.string().default('bazzball')
+    //         }).default(() => {
 
-                return {
-                    foo: 'llabzoof',
-                    bar: 'llabzrab',
-                    baz: 'llabzzab'
-                };
-            }).description('default stuff')
-        });
+    //             return {
+    //                 foo: 'llabzoof',
+    //                 bar: 'llabzrab',
+    //                 baz: 'llabzzab'
+    //             };
+    //         }).description('default stuff')
+    //     });
 
-        const instance1 = new DummyModel({
-            name: 'Stimpson J. Cat'
-        });
+    //     const instance1 = new DummyModel({
+    //         name: 'Stimpson J. Cat'
+    //     });
 
-        lab.expect(instance1.name).to.equal('Stimpson J. Cat');
-        lab.expect(instance1.stuff).to.be.an.object();
-        lab.expect(instance1.stuff.foo).to.equal('llabzoof');
-        lab.expect(instance1.stuff.bar).to.equal('llabzrab');
-        lab.expect(instance1.stuff.baz).to.equal('llabzzab');
+    //     lab.expect(instance1.name).to.equal('Stimpson J. Cat');
+    //     lab.expect(instance1.stuff).to.be.an.object();
+    //     lab.expect(instance1.stuff.foo).to.equal('llabzoof');
+    //     lab.expect(instance1.stuff.bar).to.equal('llabzrab');
+    //     lab.expect(instance1.stuff.baz).to.equal('llabzzab');
 
-        const instance2 = new DummyModel({
-            name: 'Stimpson J. Cat',
-            stuff: {
-                foo: 'customfoo'
-            }
-        });
+    //     const instance2 = new DummyModel({
+    //         name: 'Stimpson J. Cat',
+    //         stuff: {
+    //             foo: 'customfoo'
+    //         }
+    //     });
 
-        lab.expect(instance2.name).to.equal('Stimpson J. Cat');
-        lab.expect(instance2.stuff).to.be.an.object();
-        lab.expect(instance2.stuff.foo).to.equal('customfoo');
-        lab.expect(instance2.stuff.bar).to.equal('barzball');
-        lab.expect(instance2.stuff.baz).to.equal('bazzball');
-    });
-
-
-    lab.test('it throws if schema validation fails when creating an instance using the schema', () => {
-
-        class DummyModel extends MongoModels {}
-
-        DummyModel.schema = Joi.object().keys({
-            name: Joi.string().required()
-        });
-
-        const blamo = function () {
-
-            return new DummyModel({});
-        };
-
-        lab.expect(blamo).to.throw();
-
-        const hello = new DummyModel({
-            name: 'World'
-        });
-
-        lab.expect(hello).to.be.an.instanceof(DummyModel);
-    });
-
-    lab.test('it does not validate when creating an instance using validateOnWrite', () => {
-
-        class DummyModel extends MongoModels {}
-
-        DummyModel.validateOnWrite = true;
-        DummyModel.schema = Joi.object().keys({
-            name: Joi.string().required()
-        });
-
-        const blamo = function () {
-
-            return new DummyModel({});
-        };
-
-        lab.expect(blamo).to.not.throw();
-
-        const hello = new DummyModel({
-            name: 'World'
-        });
-
-        lab.expect(hello).to.be.an.instanceof(DummyModel);
-    });
+    //     lab.expect(instance2.name).to.equal('Stimpson J. Cat');
+    //     lab.expect(instance2.stuff).to.be.an.object();
+    //     lab.expect(instance2.stuff.foo).to.equal('customfoo');
+    //     lab.expect(instance2.stuff.bar).to.equal('barzball');
+    //     lab.expect(instance2.stuff.baz).to.equal('bazzball');
+    // });
 
 });
 
@@ -571,6 +525,125 @@ lab.experiment('Paged find', () => {
     });
 });
 
+lab.experiment('Auto validation', () => {
+
+    let DummyModel;
+
+    lab.before(async () => {
+
+        DummyModel = class extends MongoModels {};
+
+        DummyModel.schema = Joi.object().keys({
+            _id: Joi.object(),
+            count: Joi.number(),
+            group: Joi.string(),
+            isCool: Joi.boolean(),
+            name: Joi.string().required()
+        });
+
+        DummyModel.collectionName = 'dummies';
+
+        await MongoModels.connect(config.connection, config.options);
+    });
+
+
+    lab.after(() => {
+
+        MongoModels.disconnect();
+    });
+
+
+    lab.afterEach(async () => {
+
+        await DummyModel.deleteMany({});
+    });
+
+
+    lab.test('it inserts one', async () => {
+
+        // let exception = false;
+        // try {
+        //     await DummyModel.insertOne({});
+        // }
+        // catch (err) {
+        //     exception = err;
+        // }
+        // lab.expect(exception).to.be.an.object();
+    });
+
+    lab.test('it inserts many', async () => {
+
+        // let exception = false;
+        // try {
+        //     await DummyModel.insertMany([{}]);
+        // }
+        // catch (err) {
+        //     exception = err;
+        // }
+        // lab.expect(exception).to.be.an.object();
+    });
+
+    lab.test('it update one', async () => {
+
+        // let exception = false;
+        // try {
+        //     await DummyModel.updateOne({});
+        // }
+        // catch (err) {
+        //     exception = err;
+        // }
+        // lab.expect(exception).to.be.an.object();
+    });
+
+    lab.test('it update many', async () => {
+
+        // let exception = false;
+        // try {
+        //     await DummyModel.updateMany([{}]);
+        // }
+        // catch (err) {
+        //     exception = err;
+        // }
+        // lab.expect(exception).to.be.an.object();
+    });
+
+    lab.test('it replace one', async () => {
+
+        // let exception = false;
+        // try {
+        //     await DummyModel.replaceOne({});
+        // }
+        // catch (err) {
+        //     exception = err;
+        // }
+        // lab.expect(exception).to.be.an.object();
+    });
+
+
+    lab.test('it findByIdAndUpdate', async () => {
+
+        // let exception = false;
+        // try {
+        //     await DummyModel.findByIdAndUpdate({});
+        // }
+        // catch (err) {
+        //     exception = err;
+        // }
+        // lab.expect(exception).to.be.an.object();
+    });
+
+    lab.test('it findOneAndUpdate', async () => {
+
+        // let exception = false;
+        // try {
+        //     await DummyModel.findOneAndUpdate({});
+        // }
+        // catch (err) {
+        //     exception = err;
+        // }
+        // lab.expect(exception).to.be.an.object();
+    });
+});
 
 lab.experiment('Proxy methods', () => {
 
@@ -609,36 +682,6 @@ lab.experiment('Proxy methods', () => {
 
 
     lab.test('it inserts one document and returns the result', async () => {
-
-        const document = {
-            name: 'Horse'
-        };
-        const results = await DummyModel.insertOne(document);
-
-        lab.expect(results).to.be.an.array();
-        lab.expect(results.length).to.equal(1);
-    });
-
-    lab.test('it inserts one document and returns the result - if validation passes', async () => {
-
-        DummyModel.validateOnWrite = true;
-
-        // const blamo = async function () {
-
-        //     return await DummyModel.insertOne({});
-        // };
-        // await lab.expect(blamo).to.throw();
-
-
-        let exception = false;
-        try {
-            await DummyModel.insertOne({});
-        }
-        catch (err) {
-            exception = err;
-        }
-        lab.expect(exception).to.be.an.object();
-
 
         const document = {
             name: 'Horse'

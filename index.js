@@ -20,20 +20,8 @@ class MongoModels {
 
     constructor(data) {
 
-        if (!this.constructor.validateOnWrite) {
-            const result = this.constructor.validate(data);
-
-            if (result.error) {
-                throw result.error;
-            }
-
-            Object.assign(this, result.value);
-        }
-        else {
-            Object.assign(this, data);
-        }
+        Object.assign(this, data);
     }
-
 
     static aggregate(...args) {
 
@@ -198,6 +186,8 @@ class MongoModels {
 
     static async findByIdAndUpdate(...args) {
 
+        this.validateOne(...args);
+
         const db = dbFromArgs(args);
         const collection = db.collection(this.collectionName);
         const id = args.shift();
@@ -235,6 +225,8 @@ class MongoModels {
 
     static async findOneAndReplace(...args) {
 
+        this.validateOne(...args);
+
         const db = dbFromArgs(args);
         const collection = db.collection(this.collectionName);
         const filter = args.shift();
@@ -255,6 +247,8 @@ class MongoModels {
 
 
     static async findOneAndUpdate(...args) {
+
+        this.validateOne(...args);
 
         const db = dbFromArgs(args);
         const collection = db.collection(this.collectionName);
@@ -277,6 +271,8 @@ class MongoModels {
 
     static async insertMany(...args) {
 
+        this.validateMany(...args);
+
         const db = dbFromArgs(args);
         const collection = db.collection(this.collectionName);
         const result = await collection.insertMany(...args);
@@ -287,13 +283,7 @@ class MongoModels {
 
     static async insertOne(...args) {
 
-        if (this.validateOnWrite) {
-
-            const validation = this.validate(...args);
-            if (validation.error || validation.warning) {
-                throw new Error('validation failed');
-            }
-        }
+        this.validateOne(...args);
 
         const db = dbFromArgs(args);
         const collection = db.collection(this.collectionName);
@@ -358,6 +348,8 @@ class MongoModels {
 
 
     static async replaceOne(...args) {
+
+        this.validateOne(...args);
 
         const db = dbFromArgs(args);
         const collection = db.collection(this.collectionName);
@@ -437,6 +429,8 @@ class MongoModels {
 
     static async updateMany(...args) {
 
+        this.validateMany(...args);
+
         const db = dbFromArgs(args);
         const collection = db.collection(this.collectionName);
         const filter = args.shift();
@@ -455,6 +449,8 @@ class MongoModels {
 
     static async updateOne(...args) {
 
+        this.validateOne(...args);
+
         const db = dbFromArgs(args);
         const collection = db.collection(this.collectionName);
         const filter = args.shift();
@@ -470,6 +466,42 @@ class MongoModels {
         return this.resultFactory(result);
     }
 
+    static validateOne(...args) {
+
+        // validateOne 60454048e239701da8485709 { '$set': { name: 'New Name' } }
+        // validateOne 60454048e239701da848570a { '$set': { name: 'New Name' } } { returnOriginal: false }
+        // validateOne { _id: 60454048e239701da84856ef } { '$set': { isCool: true } }
+        // validateOne { _id: 60454048e239701da84856f2 } { '$set': { isCool: true } } { upsert: true }
+        // validateOne { name: 'Horse' }
+        // validateOne { name: 'Ren' }
+        // validateOne { name: 'Ren' } { '$set': { name: 'New Name' } }
+        // validateOne { name: 'Ren' } { '$set': { name: 'New Name' } } { returnOriginal: true }
+        // validateOne { name: 'Ren' } { isCool: true } { returnOriginal: true }
+        // validateOne { name: 'Ren' } { name: 'Stimpy' }
+        // validateOne { name: 'Ren' } { name: 'Stimpy' } { upsert: true }
+
+
+        // const validation = this.validate(...args);
+        // if (validation.error || validation.warning) {
+        //     throw new Error('validation failed');
+        // }
+    }
+
+    static validateMany(...args) {
+
+        // validateMany [ { name: 'Ren' }, { name: 'Stimpy' }, { name: 'Yak' } ]
+        // validateMany [ { name: 'Ren', group: 'Friend' }, { name: 'Stimpy', group: 'Friend' }, { name: 'Yak', group: 'Foe' } ]
+        // validateMany [ { name: 'Ren', group: 'Friend', count: 100 },{ name: 'Stimpy', group: 'Friend', count: 10 },{ name: 'Yak', group: 'Foe', count: 430 }]
+        // validateMany [ { name: 'Toast' }, { name: 'Space' } ]
+        // validateMany {} { '$set': { isCool: true } }
+        // validateMany {} { '$set': { isCool: true } } { upsert: true }
+
+
+        // const validation = this.validate(...args);
+        // if (validation.error || validation.warning) {
+        //     throw new Error('validation failed');
+        // }
+    }
 
     static validate(input) {
 
